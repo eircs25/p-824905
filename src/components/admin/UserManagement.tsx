@@ -48,19 +48,28 @@ const UserManagement: React.FC = () => {
       if (usersError) throw usersError;
       
       // Get establishment counts for each user
-      const { data: estCounts, error: estCountsError } = await supabase
+      const { data: estCountsData, error: estCountsError } = await supabase
         .from('establishments')
-        .select('owner_id, count')
-        .group('owner_id');
+        .select('owner_id, id');
         
       if (estCountsError) throw estCountsError;
+      
+      // Process the data to get counts per owner
+      const estCounts = estCountsData.reduce((acc: Record<string, number>, est) => {
+        if (acc[est.owner_id]) {
+          acc[est.owner_id]++;
+        } else {
+          acc[est.owner_id] = 1;
+        }
+        return acc;
+      }, {});
       
       // Combine the data
       const combinedUsers = profiles
         .filter(profile => profile.role === 'establishment_owner')
         .map(profile => {
           const authUser = users.users.find(user => user.id === profile.id);
-          const estCount = estCounts.find(e => e.owner_id === profile.id);
+          const count = estCounts[profile.id] || 0;
           
           return {
             id: profile.id,
@@ -68,7 +77,7 @@ const UserManagement: React.FC = () => {
             last_name: profile.last_name,
             email: authUser?.email || 'Unknown',
             status: profile.status as 'pending' | 'approved' | 'rejected',
-            establishments_count: estCount ? parseInt(estCount.count) : 0
+            establishments_count: count
           };
         });
       
