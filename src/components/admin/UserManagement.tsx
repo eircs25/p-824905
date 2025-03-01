@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Profile, Establishment } from '@/types/database';
 
 type User = {
   id: string;
@@ -10,14 +10,6 @@ type User = {
   email: string;
   status: 'pending' | 'approved' | 'rejected';
   establishments_count: number;
-};
-
-type Establishment = {
-  id: string;
-  name: string;
-  building_permit_no: string;
-  status: 'active' | 'inactive';
-  certificate_expiry_date: string;
 };
 
 const UserManagement: React.FC = () => {
@@ -75,7 +67,7 @@ const UserManagement: React.FC = () => {
             first_name: profile.first_name,
             last_name: profile.last_name,
             email: authUser?.email || 'Unknown',
-            status: profile.status,
+            status: profile.status as 'pending' | 'approved' | 'rejected',
             establishments_count: estCount ? parseInt(estCount.count) : 0
           };
         });
@@ -409,7 +401,7 @@ const UserManagement: React.FC = () => {
                                           </span>
                                         </td>
                                         <td className="px-4 py-2 text-sm">
-                                          {new Date(est.certificate_expiry_date).toLocaleDateString()}
+                                          {est.certificate_expiry ? new Date(est.certificate_expiry).toLocaleDateString() : 'N/A'}
                                         </td>
                                       </tr>
                                     ))}

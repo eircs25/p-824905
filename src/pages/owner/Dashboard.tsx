@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,7 +22,7 @@ const OwnerDashboard: React.FC = () => {
         
         if (error) throw error;
         
-        setEstablishments(data as Establishment[]);
+        setEstablishments(data || []);
       } catch (error: any) {
         console.error('Error fetching establishments:', error.message);
         toast.error('Failed to load establishments');

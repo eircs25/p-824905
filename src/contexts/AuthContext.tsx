@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -136,6 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               owner_id: data.user.id,
               name: establishment.name,
               building_permit_no: establishment.buildingPermitNo,
+              status: 'active'
             });
           
           if (estError) throw estError;
