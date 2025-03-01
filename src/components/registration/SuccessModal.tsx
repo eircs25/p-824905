@@ -1,4 +1,6 @@
+
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 interface SuccessModalProps {
   isOpen: boolean;
@@ -9,7 +11,14 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const navigate = useNavigate();
+
   if (!isOpen) return null;
+
+  const handleBackToLogin = () => {
+    onClose();
+    navigate('/owner-login');
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -29,7 +38,7 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
           You will receive an email with your password once approved
         </div>
         <button
-          onClick={onClose}
+          onClick={handleBackToLogin}
           className="text-white text-xs font-bold cursor-pointer bg-[#FE623F] px-5 py-2 rounded-[10px] border-none"
         >
           BACK TO LOG IN

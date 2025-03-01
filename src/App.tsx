@@ -7,6 +7,8 @@ import { AuthProvider } from '@/contexts/AuthContext';
 // Lazy load pages
 const Index = React.lazy(() => import('@/pages/Index'));
 const Login = React.lazy(() => import('@/pages/Login'));
+const AdminLogin = React.lazy(() => import('@/pages/AdminLogin'));
+const OwnerLogin = React.lazy(() => import('@/pages/OwnerLogin'));
 const ForgotPassword = React.lazy(() => import('@/pages/ForgotPassword'));
 const ResetPassword = React.lazy(() => import('@/pages/ResetPassword'));
 const PendingApproval = React.lazy(() => import('@/pages/PendingApproval'));
@@ -34,6 +36,8 @@ function App() {
             {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/owner-login" element={<OwnerLogin />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/pending" element={<PendingApproval />} />

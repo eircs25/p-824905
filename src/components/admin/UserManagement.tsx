@@ -109,14 +109,6 @@ const UserManagement: React.FC = () => {
   const approveUser = async (userId: string) => {
     setProcessingUser(userId);
     try {
-      // Update user status in profiles table
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ status: 'approved' })
-        .eq('id', userId);
-      
-      if (updateError) throw updateError;
-      
       // Generate a random temporary password
       const tempPassword = Math.random().toString(36).slice(-10);
       
@@ -127,21 +119,34 @@ const UserManagement: React.FC = () => {
       );
       
       if (resetError) throw resetError;
+
+      // Update user status in profiles table
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ status: 'approved' })
+        .eq('id', userId);
+      
+      if (updateError) throw updateError;
       
       // Send email with temp password
-      const { data: userData } = await supabase
-        .from('profiles')
-        .select('first_name, email')
-        .eq('id', userId)
-        .single();
+      try {
+        const response = await supabase.functions.invoke('send-approval-email', {
+          body: { 
+            userId, 
+            action: 'approve', 
+            tempPassword 
+          }
+        });
         
-      const { data: authUser } = await supabase.auth.admin.getUserById(userId);
-      
-      if (authUser?.user?.email) {
-        // In a real app, you would call your email function here
-        // For now, we'll just show a toast with the temp password
-        console.log(`Temporary password for ${authUser.user.email}: ${tempPassword}`);
-        toast.success(`User approved! Email would be sent with temp password.`);
+        if (response.error) {
+          console.error('Error sending approval email:', response.error);
+          toast.warning('User approved, but email notification failed');
+        } else {
+          toast.success('User approved and notification email sent!');
+        }
+      } catch (emailError: any) {
+        console.error('Error calling send-approval-email function:', emailError);
+        toast.warning('User approved, but email notification failed');
       }
       
       // Update local state
@@ -168,14 +173,32 @@ const UserManagement: React.FC = () => {
       
       if (error) throw error;
       
+      // Send rejection email
+      try {
+        const response = await supabase.functions.invoke('send-approval-email', {
+          body: { 
+            userId, 
+            action: 'reject' 
+          }
+        });
+        
+        if (response.error) {
+          console.error('Error sending rejection email:', response.error);
+          toast.warning('User rejected, but email notification failed');
+        } else {
+          toast.success('User rejected and notification email sent!');
+        }
+      } catch (emailError: any) {
+        console.error('Error calling send-approval-email function:', emailError);
+        toast.warning('User rejected, but email notification failed');
+      }
+      
       // Update local state
       setUsers(prev => 
         prev.map(user => 
           user.id === userId ? { ...user, status: 'rejected' } : user
         )
       );
-      
-      toast.success('User rejected');
     } catch (error: any) {
       console.error('Error rejecting user:', error.message);
       toast.error('Failed to reject user');

@@ -22,7 +22,7 @@ type AuthContextType = {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  signUp: (userData: any) => Promise<void>;
+  signUp: (userData: any) => Promise<any>;
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (newPassword: string) => Promise<void>;
   loadingProfile: boolean;
@@ -218,7 +218,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       toast.success('Password updated successfully');
-      navigate(profile?.role === 'admin' ? '/admin' : '/dashboard');
+      
+      // Redirect based on role
+      if (profile?.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error: any) {
       console.error('Error updating password:', error.message);
       toast.error(error.message || 'Failed to update password');

@@ -8,6 +8,11 @@ const PendingApproval: React.FC = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
 
+  const handleSignOut = () => {
+    signOut();
+    navigate('/owner-login');
+  };
+
   return (
     <div className="w-full min-h-screen bg-white">
       <Header />
@@ -32,7 +37,7 @@ const PendingApproval: React.FC = () => {
           </p>
           
           <button
-            onClick={() => signOut()}
+            onClick={handleSignOut}
             className="text-white text-base font-semibold cursor-pointer bg-[#FE623F] px-[30px] py-2.5 rounded-[10px] border-none"
           >
             BACK TO LOGIN

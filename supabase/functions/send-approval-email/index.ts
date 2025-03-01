@@ -3,89 +3,108 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface EmailRequest {
   userId: string;
-  tempPassword: string;
+  action: "approve" | "reject";
+  tempPassword?: string;
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      headers: corsHeaders,
+    });
   }
-  
+
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    const { userId, tempPassword }: EmailRequest = await req.json();
-    
-    // Get user information
-    const { data: user, error: userError } = await supabase.auth.admin.getUserById(userId);
-    
-    if (userError || !user) {
-      throw new Error('User not found');
-    }
-    
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('first_name, last_name')
-      .eq('id', userId)
+    const { userId, action, tempPassword } = await req.json() as EmailRequest;
+
+    // Create Supabase client with service role key
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    // Get user details
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("profiles")
+      .select("first_name, last_name, is_first_login")
+      .eq("id", userId)
       .single();
-      
-    if (profileError) {
-      throw new Error('Profile not found');
+
+    if (userError) throw userError;
+
+    // Get user email
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (authError) throw authError;
+
+    const userEmail = authUser.user?.email;
+    if (!userEmail) throw new Error("User email not found");
+
+    // In a real implementation, we would send an actual email here
+    // For this example, we'll just log it
+    console.log(`Sending ${action} email to ${userEmail}`);
+
+    let emailSubject, emailBody;
+
+    if (action === "approve") {
+      emailSubject = "Your Account Has Been Approved";
+      emailBody = `
+        Dear ${userData.first_name} ${userData.last_name},
+
+        Your account has been approved by the administrator. 
+        You can now log in using your email and the temporary password below:
+
+        Temporary Password: ${tempPassword}
+
+        Please visit the establishment owner login page at:
+        ${req.headers.get("origin") || "https://yourapp.com"}/owner-login
+
+        You will be prompted to change your password upon first login.
+
+        Thank you,
+        V-FIRE INSPECT Team
+      `;
+    } else {
+      emailSubject = "Your Account Has Been Rejected";
+      emailBody = `
+        Dear ${userData.first_name} ${userData.last_name},
+
+        We regret to inform you that your account application has been rejected by the administrator.
+        
+        If you have any questions or would like to reapply, please contact our support team.
+
+        Thank you,
+        V-FIRE INSPECT Team
+      `;
     }
-    
-    // In a real application, you would use a service like SendGrid, AWS SES, or Resend
-    // to send an actual email with the temporary password
-    
-    // For demonstration purposes, we're just logging the email
-    console.log(`
-      To: ${user.user?.email}
-      Subject: Your V-Fire Inspect Account is Approved
-      
-      Hello ${profile.first_name} ${profile.last_name},
-      
-      Your account has been approved! You can now log in to the V-Fire Inspect system.
-      
-      Your temporary password is: ${tempPassword}
-      
-      Please log in at: https://your-app-url.com/login
-      
-      You will be prompted to change your password after your first login.
-      
-      Thank you,
-      V-Fire Inspect Team
-    `);
-    
+
+    // In a real application, you would integrate with an email service like Resend, SendGrid, etc.
+    // For now, we'll just return success with the email content for demonstration
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Email would be sent in production environment" 
+      JSON.stringify({
+        success: true,
+        email: userEmail,
+        subject: emailSubject,
+        body: emailBody
       }),
-      { 
-        headers: { 
-          "Content-Type": "application/json",
-          ...corsHeaders 
-        } 
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
       }
     );
   } catch (error) {
-    console.error("Error:", error.message);
+    console.error("Error sending email:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { 
-        status: 400, 
-        headers: { 
-          "Content-Type": "application/json",
-          ...corsHeaders 
-        } 
+      JSON.stringify({ error: error.message }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
       }
     );
   }

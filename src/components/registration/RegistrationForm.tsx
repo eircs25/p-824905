@@ -231,7 +231,7 @@ export const RegistrationForm: React.FC = () => {
       <div className="flex items-center justify-between max-sm:flex-col max-sm:gap-4">
         <div className="text-base italic">
           <span>Already have an Account? </span>
-          <a href="/login" className="underline">
+          <a href="/owner-login" className="underline">
             Log in
           </a>
         </div>
