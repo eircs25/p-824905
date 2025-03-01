@@ -1,13 +1,22 @@
+
 import React from "react";
 
 interface EstablishmentFieldProps {
   onRemove?: () => void;
   index: number;
+  name: string;
+  buildingPermitNo: string;
+  onNameChange: (value: string) => void;
+  onPermitChange: (value: string) => void;
 }
 
 export const EstablishmentField: React.FC<EstablishmentFieldProps> = ({
   onRemove,
   index,
+  name,
+  buildingPermitNo,
+  onNameChange,
+  onPermitChange
 }) => {
   return (
     <div className="flex gap-5 max-md:flex-col">
@@ -19,6 +28,8 @@ export const EstablishmentField: React.FC<EstablishmentFieldProps> = ({
         <input
           type="text"
           placeholder="Est Name"
+          value={name}
+          onChange={(e) => onNameChange(e.target.value)}
           className="w-full h-[55px] text-xl font-semibold text-[#9B9B9B] bg-[#E2E2E2] px-5 py-0 rounded-[20px] border-none max-sm:h-[45px] max-sm:text-base"
         />
       </div>
@@ -30,6 +41,8 @@ export const EstablishmentField: React.FC<EstablishmentFieldProps> = ({
         <input
           type="text"
           placeholder="Bldg No."
+          value={buildingPermitNo}
+          onChange={(e) => onPermitChange(e.target.value)}
           className="w-full h-[55px] text-xl font-semibold text-[#9B9B9B] bg-[#E2E2E2] px-5 py-0 rounded-[20px] border-none max-sm:h-[45px] max-sm:text-base"
         />
         {index > 0 && (
