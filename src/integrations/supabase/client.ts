@@ -28,21 +28,28 @@ export const createAdminAccount = async () => {
     }
 
     // Look for existing user with the admin email
-    const { data: existingAuth, error: existingAuthError } = await supabase.auth.admin
-      .getUserByEmail('bureauoffireprotectionph@gmail.com');
+    const { data: existingAuth, error: existingAuthError } = await supabase.auth
+      .admin.listUsers({ 
+        filters: { 
+          email: 'bureauoffireprotectionph@gmail.com' 
+        } 
+      });
 
-    if (existingAuthError && existingAuthError.message !== 'User not found') {
+    // Check if the user exists in the result
+    const existingUser = existingAuth?.users?.length > 0 ? existingAuth.users[0] : null;
+
+    if (existingAuthError) {
       console.error('Error checking existing admin auth:', existingAuthError);
       return { success: false, error: existingAuthError };
     }
 
     // If user exists in auth but not in profiles table with admin role
-    if (existingAuth) {
+    if (existingUser) {
       // Update the existing user's profile
       const { error: profileUpdateError } = await supabase
         .from('profiles')
         .upsert({
-          id: existingAuth.id,
+          id: existingUser.id,
           role: 'admin',
           status: 'approved',
           first_name: 'BFP',
