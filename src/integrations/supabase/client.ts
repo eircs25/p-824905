@@ -29,9 +29,17 @@ export const createAdminAccount = async () => {
     }
 
     // Create admin user
+    console.log('Creating admin account...');
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email: 'bureauoffireprotectionph@gmail.com',
       password: 'BFPValenzuela2025',
+      options: {
+        data: {
+          role: 'admin',
+          first_name: 'BFP',
+          last_name: 'Admin',
+        }
+      }
     });
 
     if (signUpError) {
@@ -57,22 +65,11 @@ export const createAdminAccount = async () => {
         return { success: false, error: profileError };
       }
 
-      // Also set user_metadata
-      const { error: metadataError } = await supabase.auth.updateUser({
-        data: {
-          role: 'admin',
-          first_name: 'BFP',
-          last_name: 'Admin'
-        }
-      });
-
-      if (metadataError) {
-        console.error('Error setting admin metadata:', metadataError);
-      }
-
       console.log('Admin account created successfully');
       return { success: true };
     }
+
+    return { success: false, error: 'Failed to create admin user' };
   } catch (error) {
     console.error('Unexpected error creating admin:', error);
     return { success: false, error };

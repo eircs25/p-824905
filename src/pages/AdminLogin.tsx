@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/registration/Header';
 import { toast } from 'sonner';
 import { createAdminAccount } from '@/integrations/supabase/client';
@@ -10,7 +10,6 @@ const AdminLogin: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,19 +18,14 @@ const AdminLogin: React.FC = () => {
       .then(result => {
         if (!result.success) {
           console.error('Failed to initialize admin account:', result.error);
+        } else {
+          console.log('Admin account initialization check completed');
         }
       })
       .catch(error => {
         console.error('Error during admin account initialization:', error);
       });
   }, []);
-
-  useEffect(() => {
-    // If user is already logged in and is an admin, redirect to admin dashboard
-    if (!authLoading && profile && profile.role === 'admin') {
-      navigate('/admin');
-    }
-  }, [profile, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,22 +35,41 @@ const AdminLogin: React.FC = () => {
       return;
     }
 
-    // Check if username matches the predefined admin username
-    if (username !== 'BFPadmin') {
-      toast.error('Invalid username');
+    // Check if username and password match the predefined admin credentials
+    if (username !== 'BFPadmin' || password !== 'BFPValenzuela2025') {
+      toast.error('Invalid username or password');
       return;
     }
     
     setLoading(true);
     
     try {
-      // Always use the admin email for the actual authentication
-      await signIn('bureauoffireprotectionph@gmail.com', password);
-      // The redirection to admin dashboard will happen in the useEffect above
-      // after the profile is fetched
-    } catch (error) {
-      console.error('Login error:', error);
-      toast.error('Invalid credentials or you do not have admin privileges');
+      // Sign in with the admin email (which is created by createAdminAccount function)
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: 'bureauoffireprotectionph@gmail.com',
+        password: 'BFPValenzuela2025'
+      });
+      
+      if (error) throw error;
+      
+      // Fetch the profile to confirm admin status
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+      
+      if (profileError) throw profileError;
+      
+      if (profileData.role !== 'admin') {
+        throw new Error('User does not have admin privileges');
+      }
+      
+      toast.success('Successfully logged in');
+      navigate('/admin');
+    } catch (error: any) {
+      console.error('Login error:', error.message);
+      toast.error('Login failed: ' + error.message);
     } finally {
       setLoading(false);
     }
