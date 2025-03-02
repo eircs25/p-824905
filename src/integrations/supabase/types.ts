@@ -47,6 +47,7 @@ export type Database = {
           last_name: string | null
           role: string | null
           status: string | null
+          username: string | null
         }
         Insert: {
           first_name?: string | null
@@ -55,6 +56,7 @@ export type Database = {
           last_name?: string | null
           role?: string | null
           status?: string | null
+          username?: string | null
         }
         Update: {
           first_name?: string | null
@@ -63,6 +65,7 @@ export type Database = {
           last_name?: string | null
           role?: string | null
           status?: string | null
+          username?: string | null
         }
         Relationships: []
       }

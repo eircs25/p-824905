@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -32,22 +33,23 @@ const UserManagement: React.FC = () => {
       
       if (approvedError) throw approvedError;
       
-      // Get the count of establishments for each owner
-      const { data: establishmentCounts, error: countsError } = await supabase
+      // First, get all establishments to manually count by owner
+      const { data: allEstablishments, error: establishmentsError } = await supabase
         .from('establishments')
-        .select('owner_id, count(*)')
-        .groupBy('owner_id');
+        .select('id, owner_id');
       
-      if (countsError) throw countsError;
+      if (establishmentsError) throw establishmentsError;
       
-      // Create a map of owner_id to establishment count
-      const countsMap = (establishmentCounts || []).reduce((acc, item) => {
-        // Safely access properties with type checking
-        if (item && typeof item === 'object' && 'owner_id' in item && 'count' in item) {
-          acc[item.owner_id as string] = item.count as number;
-        }
-        return acc;
-      }, {} as Record<string, number>);
+      // Manually count establishments by owner
+      const countsMap: Record<string, number> = {};
+      
+      if (allEstablishments) {
+        allEstablishments.forEach(establishment => {
+          if (establishment.owner_id) {
+            countsMap[establishment.owner_id] = (countsMap[establishment.owner_id] || 0) + 1;
+          }
+        });
+      }
       
       // Process and set state
       setPendingUsers(pendingUsers || []);
