@@ -52,14 +52,22 @@ const AdminLogin: React.FC = () => {
       
       if (error) throw error;
       
+      if (!data.user) {
+        throw new Error('Failed to authenticate');
+      }
+      
       // Fetch the profile to confirm admin status
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', data.user.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to avoid the JSON error
       
       if (profileError) throw profileError;
+      
+      if (!profileData) {
+        throw new Error('Profile not found');
+      }
       
       if (profileData.role !== 'admin') {
         throw new Error('User does not have admin privileges');

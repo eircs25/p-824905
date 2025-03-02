@@ -32,7 +32,7 @@ const Dashboard: React.FC = () => {
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle(); // Use maybeSingle instead of single
         
         if (profileError) throw profileError;
         

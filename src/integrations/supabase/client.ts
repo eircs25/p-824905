@@ -11,21 +11,52 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 export const createAdminAccount = async () => {
   try {
     // Check if admin user exists
-    const { data: existingUser, error: checkError } = await supabase
+    const { data: existingUsers, error: checkError } = await supabase
       .from('profiles')
       .select('*')
       .eq('role', 'admin')
-      .eq('status', 'approved')
-      .single();
+      .eq('status', 'approved');
 
-    if (checkError && checkError.code !== 'PGRST116') {
+    if (checkError) {
       console.error('Error checking admin existence:', checkError);
       return { success: false, error: checkError };
     }
 
-    if (existingUser) {
+    if (existingUsers && existingUsers.length > 0) {
       console.log('Admin account already exists');
       return { success: true, message: 'Admin account already exists' };
+    }
+
+    // Look for existing user with the admin email
+    const { data: existingAuth, error: existingAuthError } = await supabase.auth.admin
+      .getUserByEmail('bureauoffireprotectionph@gmail.com');
+
+    if (existingAuthError && existingAuthError.message !== 'User not found') {
+      console.error('Error checking existing admin auth:', existingAuthError);
+      return { success: false, error: existingAuthError };
+    }
+
+    // If user exists in auth but not in profiles table with admin role
+    if (existingAuth) {
+      // Update the existing user's profile
+      const { error: profileUpdateError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: existingAuth.id,
+          role: 'admin',
+          status: 'approved',
+          first_name: 'BFP',
+          last_name: 'Admin',
+          is_first_login: false
+        });
+
+      if (profileUpdateError) {
+        console.error('Error updating existing user to admin:', profileUpdateError);
+        return { success: false, error: profileUpdateError };
+      }
+
+      console.log('Existing user updated to admin successfully');
+      return { success: true };
     }
 
     // Create admin user
@@ -51,14 +82,14 @@ export const createAdminAccount = async () => {
       // Set admin profile
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          id: authData.user.id,
           role: 'admin',
           status: 'approved',
           first_name: 'BFP',
           last_name: 'Admin',
           is_first_login: false
-        })
-        .eq('id', authData.user.id);
+        });
 
       if (profileError) {
         console.error('Error setting admin profile:', profileError);
