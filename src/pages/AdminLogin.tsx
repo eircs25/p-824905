@@ -41,7 +41,7 @@ const AdminLogin: React.FC = () => {
       return;
     }
 
-    // Check if credentials match the predefined admin credentials
+    // Check if username matches the predefined admin username
     if (username !== 'BFPadmin') {
       toast.error('Invalid username');
       return;
