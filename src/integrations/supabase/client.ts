@@ -29,14 +29,12 @@ export const createAdminAccount = async () => {
 
     // Look for existing user with the admin email
     const { data: existingAuth, error: existingAuthError } = await supabase.auth
-      .admin.listUsers({ 
-        filters: { 
-          email: 'bureauoffireprotectionph@gmail.com' 
-        } 
-      });
+      .admin.listUsers();
 
-    // Check if the user exists in the result
-    const existingUser = existingAuth?.users?.length > 0 ? existingAuth.users[0] : null;
+    // Filter users manually to find the admin email
+    const existingUser = existingAuth?.users?.find(
+      user => user.email === 'bureauoffireprotectionph@gmail.com'
+    );
 
     if (existingAuthError) {
       console.error('Error checking existing admin auth:', existingAuthError);
